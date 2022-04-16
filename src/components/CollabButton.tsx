@@ -28,8 +28,10 @@ const CollabButton = ({
         aria-label={t("labels.liveCollaboration")}
         showAriaLabel={useDeviceType().isMobile}
       >
-        {collaboratorCount > 0 && (
-          <div className="CollabButton-collaborators">{collaboratorCount}</div>
+        {isCollaborating && (
+          <div className="CollabButton-collaborators">
+            {collaboratorCount || 1}
+          </div>
         )}
       </ToolButton>
     </>
