@@ -78,7 +78,6 @@ export const isCollaboratingAtom = atom(false);
 interface CollabState {
   errorMessage: string;
   username: string;
-  userState: UserIdleState;
   activeRoomLink: string;
 }
 
@@ -116,7 +115,6 @@ class Collab extends PureComponent<Props, CollabState> {
     this.state = {
       errorMessage: "",
       username: importUsernameFromLocalStorage() || "",
-      userState: UserIdleState.ACTIVE,
       activeRoomLink: "",
     };
     this.portal = new Portal(this);
@@ -667,19 +665,17 @@ class Collab extends PureComponent<Props, CollabState> {
   };
 
   setCollaborators(sockets: string[]) {
-    this.setState((state) => {
-      const collaborators: InstanceType<typeof Collab>["collaborators"] =
-        new Map();
-      for (const socketId of sockets) {
-        if (this.collaborators.has(socketId)) {
-          collaborators.set(socketId, this.collaborators.get(socketId)!);
-        } else {
-          collaborators.set(socketId, {});
-        }
+    const collaborators: InstanceType<typeof Collab>["collaborators"] =
+      new Map();
+    for (const socketId of sockets) {
+      if (this.collaborators.has(socketId)) {
+        collaborators.set(socketId, this.collaborators.get(socketId)!);
+      } else {
+        collaborators.set(socketId, {});
       }
-      this.collaborators = collaborators;
-      this.excalidrawAPI.updateScene({ collaborators });
-    });
+    }
+    this.collaborators = collaborators;
+    this.excalidrawAPI.updateScene({ collaborators });
   }
 
   public setLastBroadcastedOrReceivedSceneVersion = (version: number) => {
@@ -708,7 +704,6 @@ class Collab extends PureComponent<Props, CollabState> {
   );
 
   onIdleStateChange = (userState: UserIdleState) => {
-    this.setState({ userState });
     this.portal.broadcastIdleChange(userState);
   };
 
