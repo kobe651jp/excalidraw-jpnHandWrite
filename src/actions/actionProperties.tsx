@@ -14,6 +14,7 @@ import {
   FillHachureIcon,
   FillSolidIcon,
   FontFamilyCodeIcon,
+  FontFamilyDrawIcon,
   FontFamilyHandDrawnIcon,
   FontFamilyNormalIcon,
   FontSizeExtraLargeIcon,
@@ -679,6 +680,11 @@ export const actionChangeFontFamily = register({
         value: FONT_FAMILY.Cascadia,
         text: t("labels.code"),
         icon: <FontFamilyCodeIcon theme={appState.theme} />,
+      },
+      {
+        value: FONT_FAMILY.JKGM,
+        text: t("labels.handJapanese"),
+        icon: <FontFamilyDrawIcon theme={appState.theme} />,
       },
     ];
 
