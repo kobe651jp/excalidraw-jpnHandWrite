@@ -128,6 +128,10 @@ export const exportToSvg = async (
         font-family: "Cascadia";
         src: url("https://excalidraw.com/Cascadia.woff2");
       }
+      @font-face {
+        font-family: "JKGM";
+        src: url("https://objectstorage.ap-tokyo-1.oraclecloud.com/p/3X9pn7B5LF7C8CGe0kqNMdpcAjR3xcVFW6opN32mG5okagMnmMRaaRbUTLYL_H4l/n/nryuyr0u439b/b/shareup/o/assets/JKG-M_3.ttf");
+      }
     </style>
   </defs>
   `;
