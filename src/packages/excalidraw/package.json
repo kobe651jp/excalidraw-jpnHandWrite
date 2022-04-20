@@ -1,6 +1,8 @@
 {
-    "name": "@excalidraw/excalidraw",
-    "version": "0.11.1",
+    "name": "@shareupjp/excalidraw",
+    "email": "piao.changzhu@shareup.jp",
+    "url": "https://shareup.jp",
+    "version": "0.11.5",
     "main": "main.js",
     "types": "types/packages/excalidraw/index.d.ts",
     "files": [
@@ -10,15 +12,16 @@
     "publishConfig": {
         "access": "public"
     },
-    "description": "Excalidraw as a React component",
-    "repository": "https://github.com/excalidraw/excalidraw",
+    "description": "Excalidraw as a React component forked by shareup.jp",
+    "repository": "https://github.com/kobe651jp/excalidraw-jpnHandWrite",
     "license": "MIT",
     "keywords": [
         "excalidraw",
         "excalidraw-embed",
         "react",
         "npm",
-        "npm excalidraw"
+        "npm excalidraw",
+        "excalidraw japanese hand write"
     ],
     "browserslist": {
         "production": [
@@ -69,8 +72,8 @@
         "webpack-dev-server": "4.7.4",
         "webpack-merge": "5.8.0"
     },
-    "bugs": "https://github.com/excalidraw/excalidraw/issues",
-    "homepage": "https://github.com/excalidraw/excalidraw/tree/master/src/packages/excalidraw",
+    "bugs": "https://github.com/kobe651jp/excalidraw-jpnHandWrite/issues",
+    "homepage": "https://github.com/kobe651jp/excalidraw-jpnHandWrite/tree/master/src/packages/excalidraw",
     "scripts": {
         "gen:types": "tsc --project ../../../tsconfig-types.json",
         "build:umd": "rm -rf dist && cross-env NODE_ENV=production webpack --config webpack.prod.config.js && cross-env NODE_ENV=development webpack --config webpack.dev.config.js && yarn gen:types",
@@ -81,6 +84,7 @@
         "build:example": "EXAMPLE=true webpack --config webpack.dev-server.config.js"
     },
     "dependencies": {
+        "compression-webpack-plugin": "9.2.0",
         "dotenv": "10.0.0"
     }
 }
