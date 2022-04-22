@@ -289,7 +289,8 @@
         "title": "ヘルプ",
         "view": "表示",
         "zoomToFit": "すべての要素が収まるようにズーム",
-        "zoomToSelection": "選択要素にズーム"
+        "zoomToSelection": "選択要素にズーム",
+        "toggleElementLock": "ロックを解除/設定"
     },
     "clearCanvasDialog": {
         "title": "キャンバスを消去"
