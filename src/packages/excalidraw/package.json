@@ -2,7 +2,7 @@
     "name": "@shareupjp/excalidraw",
     "email": "piao.changzhu@shareup.jp",
     "url": "https://shareup.jp",
-    "version": "0.11.5",
+    "version": "0.11.6",
     "main": "main.js",
     "types": "types/packages/excalidraw/index.d.ts",
     "files": [
