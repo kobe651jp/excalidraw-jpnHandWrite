@@ -141,6 +141,10 @@ export const exportToSvg = async (
         font-family: "Cascadia";
         src: url("${assetPath}Cascadia.woff2");
       }
+      @font-face {
+        font-family: "JKGM";
+        src: url("https://unpkg.com/@shareupjp/excalidraw/dist/excalidraw-assets/JKG-M_3.ttf");
+      }
     </style>
   </defs>
   `;
