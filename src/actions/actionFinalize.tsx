@@ -1,6 +1,6 @@
 import { KEYS } from "../keys";
 import { isInvisiblySmallElement } from "../element";
-import { resetCursor } from "../utils";
+import { updateActiveTool, resetCursor } from "../utils";
 import { ToolButton } from "../components/ToolButton";
 import { done } from "../components/icons";
 import { t } from "../i18n";
@@ -14,11 +14,12 @@ import {
   bindOrUnbindLinearElement,
 } from "../element/binding";
 import { isBindingElement } from "../element/typeChecks";
+import { AppState } from "../types";
 
 export const actionFinalize = register({
   name: "finalize",
   trackEvent: false,
-  perform: (elements, appState, _, { canvas, focusContainer }) => {
+  perform: (elements, appState, _, { canvas, focusContainer, scene }) => {
     if (appState.editingLinearElement) {
       const { elementId, startBindingElement, endBindingElement } =
         appState.editingLinearElement;
@@ -49,8 +50,12 @@ export const actionFinalize = register({
 
     let newElements = elements;
 
-    if (appState.pendingImageElement) {
-      mutateElement(appState.pendingImageElement, { isDeleted: true }, false);
+    const pendingImageElement =
+      appState.pendingImageElementId &&
+      scene.getElement(appState.pendingImageElementId);
+
+    if (pendingImageElement) {
+      mutateElement(pendingImageElement, { isDeleted: true }, false);
     }
 
     if (window.document.activeElement instanceof HTMLElement) {
@@ -137,6 +142,20 @@ export const actionFinalize = register({
       resetCursor(canvas);
     }
 
+    let activeTool: AppState["activeTool"];
+    if (appState.activeTool.type === "eraser") {
+      activeTool = updateActiveTool(appState, {
+        ...(appState.activeTool.lastActiveToolBeforeEraser || {
+          type: "selection",
+        }),
+        lastActiveToolBeforeEraser: null,
+      });
+    } else {
+      activeTool = updateActiveTool(appState, {
+        type: "selection",
+      });
+    }
+
     return {
       elements: newElements,
       appState: {
@@ -147,14 +166,7 @@ export const actionFinalize = register({
             appState.activeTool.type === "freedraw") &&
           multiPointElement
             ? appState.activeTool
-            : {
-                ...appState.activeTool,
-                type:
-                  appState.activeTool.type === "eraser" &&
-                  appState.activeTool.lastActiveToolBeforeEraser
-                    ? appState.activeTool.lastActiveToolBeforeEraser
-                    : "selection",
-              },
+            : activeTool,
         draggingElement: null,
         multiElement: null,
         editingElement: null,
@@ -169,7 +181,7 @@ export const actionFinalize = register({
                 [multiPointElement.id]: true,
               }
             : appState.selectedElementIds,
-        pendingImageElement: null,
+        pendingImageElementId: null,
       },
       commitToHistory: appState.activeTool.type === "freedraw",
     };

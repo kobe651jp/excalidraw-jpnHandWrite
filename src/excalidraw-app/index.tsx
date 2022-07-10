@@ -1,26 +1,26 @@
 import LanguageDetector from "i18next-browser-languagedetector";
-import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { trackEvent } from "../analytics";
 import { getDefaultAppState } from "../appState";
 import { ErrorDialog } from "../components/ErrorDialog";
 import { TopErrorBoundary } from "../components/TopErrorBoundary";
 import {
   APP_NAME,
+  COOKIES,
   EVENT,
   TITLE_TIMEOUT,
-  URL_HASH_KEYS,
   VERSION_TIMEOUT,
 } from "../constants";
 import { loadFromBlob } from "../data/blob";
-import { ImportedDataState } from "../data/types";
 import {
   ExcalidrawElement,
   FileId,
   NonDeletedExcalidrawElement,
 } from "../element/types";
 import { useCallbackRefState } from "../hooks/useCallbackRefState";
-import { Language, t } from "../i18n";
-import Excalidraw, {
+import { t } from "../i18n";
+import {
+  Excalidraw,
   defaultLang,
   languages,
 } from "../packages/excalidraw/index";
@@ -29,6 +29,7 @@ import {
   LibraryItems,
   ExcalidrawImperativeAPI,
   BinaryFiles,
+  ExcalidrawInitialDataState,
 } from "../types";
 import {
   debounce,
@@ -44,20 +45,26 @@ import {
   STORAGE_KEYS,
   SYNC_BROWSER_TABS_TIMEOUT,
 } from "./app_constants";
-import CollabWrapper, {
+import Collab, {
   CollabAPI,
-  CollabContext,
-  CollabContextConsumer,
-} from "./collab/CollabWrapper";
+  collabAPIAtom,
+  collabDialogShownAtom,
+  isCollaboratingAtom,
+} from "./collab/Collab";
 import { LanguageList } from "./components/LanguageList";
-import { exportToBackend, getCollaborationLinkData, loadScene } from "./data";
+import {
+  exportToBackend,
+  getCollaborationLinkData,
+  isCollaborationLink,
+  loadScene,
+} from "./data";
 import {
   getLibraryItemsFromStorage,
   importFromLocalStorage,
   importUsernameFromLocalStorage,
 } from "./data/localStorage";
 import CustomStats from "./CustomStats";
-import { restoreAppState, RestoredDataState } from "../data/restore";
+import { restore, restoreAppState, RestoredDataState } from "../data/restore";
 import { Tooltip } from "../components/Tooltip";
 import { shield } from "../components/icons";
 
@@ -71,20 +78,24 @@ import { loadFilesFromFirebase } from "./data/firebase";
 import { LocalData } from "./data/LocalData";
 import { isBrowserStorageStateNewer } from "./data/tabSync";
 import clsx from "clsx";
+import { Provider, useAtom } from "jotai";
+import { jotaiStore, useAtomWithInitialValue } from "../jotai";
+import { reconcileElements } from "./collab/reconciliation";
+import { parseLibraryTokensFromUrl, useHandleLibrary } from "../data/library";
+
+const isExcalidrawPlusSignedUser = document.cookie.includes(
+  COOKIES.AUTH_STATE_COOKIE,
+);
 
 const languageDetector = new LanguageDetector();
 languageDetector.init({
-  languageUtils: {
-    formatLanguageCode: (langCode: Language["code"]) => langCode,
-    isWhitelisted: () => true,
-  },
-  checkWhitelist: false,
+  languageUtils: {},
 });
 
 const initializeScene = async (opts: {
   collabAPI: CollabAPI;
 }): Promise<
-  { scene: ImportedDataState | null } & (
+  { scene: ExcalidrawInitialDataState | null } & (
     | { isExternalScene: true; id: string; key: string }
     | { isExternalScene: false; id?: null; key?: null }
   )
@@ -168,7 +179,7 @@ const initializeScene = async (opts: {
 
   if (roomLinkData) {
     return {
-      scene: await opts.collabAPI.initializeSocketClient(roomLinkData),
+      scene: await opts.collabAPI.startCollaboration(roomLinkData),
       isExternalScene: true,
       id: roomLinkData.roomId,
       key: roomLinkData.roomKey,
@@ -186,7 +197,7 @@ const initializeScene = async (opts: {
   return { scene: null, isExternalScene: false };
 };
 
-const PlusLinkJSX = (
+const PlusLPLinkJSX = (
   <p style={{ direction: "ltr", unicodeBidi: "embed" }}>
     Introducing Excalidraw+
     <br />
@@ -200,6 +211,17 @@ const PlusLinkJSX = (
   </p>
 );
 
+const PlusAppLinkJSX = (
+  <a
+    href={`${process.env.REACT_APP_PLUS_APP}/#excalidraw-redirect`}
+    target="_blank"
+    rel="noreferrer"
+    className="plus-button"
+  >
+    Go to Excalidraw+
+  </a>
+);
+
 const ExcalidrawWrapper = () => {
   const [errorMessage, setErrorMessage] = useState("");
   let currentLangCode = languageDetector.detect() || defaultLang.code;
@@ -211,11 +233,11 @@ const ExcalidrawWrapper = () => {
   // ---------------------------------------------------------------------------
 
   const initialStatePromiseRef = useRef<{
-    promise: ResolvablePromise<ImportedDataState | null>;
+    promise: ResolvablePromise<ExcalidrawInitialDataState | null>;
   }>({ promise: null! });
   if (!initialStatePromiseRef.current.promise) {
     initialStatePromiseRef.current.promise =
-      resolvablePromise<ImportedDataState | null>();
+      resolvablePromise<ExcalidrawInitialDataState | null>();
   }
 
   useEffect(() => {
@@ -229,7 +251,16 @@ const ExcalidrawWrapper = () => {
   const [excalidrawAPI, excalidrawRefCallback] =
     useCallbackRefState<ExcalidrawImperativeAPI>();
 
-  const collabAPI = useContext(CollabContext)?.api;
+  const [collabAPI] = useAtom(collabAPIAtom);
+  const [, setCollabDialogShown] = useAtom(collabDialogShownAtom);
+  const [isCollaborating] = useAtomWithInitialValue(isCollaboratingAtom, () => {
+    return isCollaborationLink(window.location.href);
+  });
+
+  useHandleLibrary({
+    excalidrawAPI,
+    getInitialLibraryItems: getLibraryItemsFromStorage,
+  });
 
   useEffect(() => {
     if (!collabAPI || !excalidrawAPI) {
@@ -300,33 +331,46 @@ const ExcalidrawWrapper = () => {
           LocalData.fileStorage.clearObsoleteFiles({ currentFileIds: fileIds });
         }
       }
-
-      data.scene.libraryItems = getLibraryItemsFromStorage();
     };
 
-    initializeScene({ collabAPI }).then((data) => {
+    initializeScene({ collabAPI }).then(async (data) => {
       loadImages(data, /* isInitialLoad */ true);
-      initialStatePromiseRef.current.promise.resolve(data.scene);
+
+      initialStatePromiseRef.current.promise.resolve({
+        ...data.scene,
+        // at this point the state may have already been updated (e.g. when
+        // collaborating, we may have received updates from other clients)
+        appState: restoreAppState(
+          data.scene?.appState,
+          excalidrawAPI.getAppState(),
+        ),
+        elements: reconcileElements(
+          data.scene?.elements || [],
+          excalidrawAPI.getSceneElementsIncludingDeleted(),
+          excalidrawAPI.getAppState(),
+        ),
+      });
     });
 
-    const onHashChange = (event: HashChangeEvent) => {
+    const onHashChange = async (event: HashChangeEvent) => {
       event.preventDefault();
-      const hash = new URLSearchParams(window.location.hash.slice(1));
-      const libraryUrl = hash.get(URL_HASH_KEYS.addLibrary);
-      if (libraryUrl) {
-        // If hash changed and it contains library url, import it and replace
-        // the url to its previous state (important in case of collaboration
-        // and similar).
-        // Using history API won't trigger another hashchange.
-        window.history.replaceState({}, "", event.oldURL);
-        excalidrawAPI.importLibrary(libraryUrl, hash.get("token"));
-      } else {
+      const libraryUrlTokens = parseLibraryTokensFromUrl();
+      if (!libraryUrlTokens) {
+        if (
+          collabAPI.isCollaborating() &&
+          !isCollaborationLink(window.location.href)
+        ) {
+          collabAPI.stopCollaboration(false);
+        }
+        excalidrawAPI.updateScene({ appState: { isLoading: true } });
+
         initializeScene({ collabAPI }).then((data) => {
           loadImages(data);
           if (data.scene) {
             excalidrawAPI.updateScene({
               ...data.scene,
-              appState: restoreAppState(data.scene.appState, null),
+              ...restore(data.scene, null, null),
+              commitToHistory: true,
             });
           }
         });
@@ -354,6 +398,8 @@ const ExcalidrawWrapper = () => {
           setLangCode(langCode);
           excalidrawAPI.updateScene({
             ...localDataState,
+          });
+          excalidrawAPI.updateLibrary({
             libraryItems: getLibraryItemsFromStorage(),
           });
           collabAPI.setUsername(username || "");
@@ -465,19 +511,17 @@ const ExcalidrawWrapper = () => {
         if (excalidrawAPI) {
           let didChange = false;
 
-          let pendingImageElement = appState.pendingImageElement;
           const elements = excalidrawAPI
             .getSceneElementsIncludingDeleted()
             .map((element) => {
               if (
                 LocalData.fileStorage.shouldUpdateImageElementStatus(element)
               ) {
-                didChange = true;
-                const newEl = newElementWith(element, { status: "saved" });
-                if (pendingImageElement === element) {
-                  pendingImageElement = newEl;
+                const newElement = newElementWith(element, { status: "saved" });
+                if (newElement !== element) {
+                  didChange = true;
                 }
-                return newEl;
+                return newElement;
               }
               return element;
             });
@@ -485,9 +529,6 @@ const ExcalidrawWrapper = () => {
           if (didChange) {
             excalidrawAPI.updateScene({
               elements,
-              appState: {
-                pendingImageElement,
-              },
             });
           }
         }
@@ -531,17 +572,16 @@ const ExcalidrawWrapper = () => {
       if (isMobile) {
         return null;
       }
+
       return (
         <div
           style={{
-            width: "24ch",
+            width: isExcalidrawPlusSignedUser ? "21ch" : "23ch",
             fontSize: "0.7em",
             textAlign: "center",
           }}
         >
-          {/* <GitHubCorner theme={appState.theme} dir={document.dir} /> */}
-          {/* FIXME remove after 2021-05-20 */}
-          {PlusLinkJSX}
+          {isExcalidrawPlusSignedUser ? PlusAppLinkJSX : PlusLPLinkJSX}
         </div>
       );
     },
@@ -593,12 +633,14 @@ const ExcalidrawWrapper = () => {
                 marginTop: isTinyDevice ? 16 : undefined,
                 marginLeft: "auto",
                 marginRight: isTinyDevice ? "auto" : undefined,
-                padding: "4px 2px",
-                border: "1px dashed #aaa",
+                padding: isExcalidrawPlusSignedUser ? undefined : "4px 2px",
+                border: isExcalidrawPlusSignedUser
+                  ? undefined
+                  : "1px dashed #aaa",
                 borderRadius: 12,
               }}
             >
-              {PlusLinkJSX}
+              {isExcalidrawPlusSignedUser ? PlusAppLinkJSX : PlusLPLinkJSX}
             </div>
           </div>
         );
@@ -630,23 +672,19 @@ const ExcalidrawWrapper = () => {
     localStorage.setItem(STORAGE_KEYS.LOCAL_STORAGE_LIBRARY, serializedItems);
   };
 
-  const onRoomClose = useCallback(() => {
-    LocalData.fileStorage.reset();
-  }, []);
-
   return (
     <div
       style={{ height: "100%" }}
       className={clsx("excalidraw-app", {
-        "is-collaborating": collabAPI?.isCollaborating(),
+        "is-collaborating": isCollaborating,
       })}
     >
       <Excalidraw
         ref={excalidrawRefCallback}
         onChange={onChange}
         initialData={initialStatePromiseRef.current.promise}
-        onCollabButtonClick={collabAPI?.onCollabButtonClick}
-        isCollaborating={collabAPI?.isCollaborating()}
+        onCollabButtonClick={() => setCollabDialogShown(true)}
+        isCollaborating={isCollaborating}
         onPointerUpdate={collabAPI?.onPointerUpdate}
         UIOptions={{
           canvasActions: {
@@ -680,12 +718,7 @@ const ExcalidrawWrapper = () => {
         onLibraryChange={onLibraryChange}
         autoFocus={true}
       />
-      {excalidrawAPI && (
-        <CollabWrapper
-          excalidrawAPI={excalidrawAPI}
-          onRoomClose={onRoomClose}
-        />
-      )}
+      {excalidrawAPI && <Collab excalidrawAPI={excalidrawAPI} />}
       {errorMessage && (
         <ErrorDialog
           message={errorMessage}
@@ -699,9 +732,9 @@ const ExcalidrawWrapper = () => {
 const ExcalidrawApp = () => {
   return (
     <TopErrorBoundary>
-      <CollabContextConsumer>
+      <Provider unstable_createStore={() => jotaiStore}>
         <ExcalidrawWrapper />
-      </CollabContextConsumer>
+      </Provider>
     </TopErrorBoundary>
   );
 };

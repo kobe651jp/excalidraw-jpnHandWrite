@@ -115,6 +115,9 @@ describe("textWysiwyg", () => {
         height: textSize,
         containerId: container.id,
       });
+      mutateElement(container, {
+        boundElements: [{ type: "text", id: text.id }],
+      });
 
       h.elements = [container, text];
 
@@ -542,6 +545,29 @@ describe("textWysiwyg", () => {
       expect(line.boundElements).toBe(null);
       expect(h.elements[1].type).toBe("text");
       expect((h.elements[1] as ExcalidrawTextElement).containerId).toBe(null);
+    });
+
+    it("should'nt bind text to container when not double clicked on center", async () => {
+      expect(h.elements.length).toBe(1);
+      expect(h.elements[0].id).toBe(rectangle.id);
+
+      // clicking somewhere on top left
+      mouse.doubleClickAt(rectangle.x + 20, rectangle.y + 20);
+      expect(h.elements.length).toBe(2);
+
+      const text = h.elements[1] as ExcalidrawTextElementWithContainer;
+      expect(text.type).toBe("text");
+      expect(text.containerId).toBe(null);
+      mouse.down();
+      const editor = document.querySelector(
+        ".excalidraw-textEditorContainer > textarea",
+      ) as HTMLTextAreaElement;
+
+      fireEvent.change(editor, { target: { value: "Hello World!" } });
+
+      await new Promise((r) => setTimeout(r, 0));
+      editor.blur();
+      expect(rectangle.boundElements).toBe(null);
     });
 
     it("should update font family correctly on undo/redo by selecting bounded text when font family was updated", async () => {

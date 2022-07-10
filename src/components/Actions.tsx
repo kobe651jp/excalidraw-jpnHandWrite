@@ -3,7 +3,7 @@ import { ActionManager } from "../actions/manager";
 import { getNonDeletedElements } from "../element";
 import { ExcalidrawElement, PointerType } from "../element/types";
 import { t } from "../i18n";
-import { useDeviceType } from "../components/App";
+import { useDevice } from "../components/App";
 import {
   canChangeSharpness,
   canHaveArrowheads,
@@ -15,7 +15,12 @@ import {
 } from "../scene";
 import { SHAPES } from "../shapes";
 import { AppState, Zoom } from "../types";
-import { capitalizeString, isTransparent, setCursorForShape } from "../utils";
+import {
+  capitalizeString,
+  isTransparent,
+  updateActiveTool,
+  setCursorForShape,
+} from "../utils";
 import Stack from "./Stack";
 import { ToolButton } from "./ToolButton";
 import { hasStrokeColor } from "../scene/comparisons";
@@ -47,7 +52,7 @@ export const SelectedShapeActions = ({
     isSingleElementBoundContainer = true;
   }
   const isEditing = Boolean(appState.editingElement);
-  const deviceType = useDeviceType();
+  const device = useDevice();
   const isRTL = document.documentElement.getAttribute("dir") === "rtl";
 
   const showFillIcons =
@@ -172,8 +177,8 @@ export const SelectedShapeActions = ({
         <fieldset>
           <legend>{t("labels.actions")}</legend>
           <div className="buttonList">
-            {!deviceType.isMobile && renderAction("duplicateSelection")}
-            {!deviceType.isMobile && renderAction("deleteSelectedElements")}
+            {!device.isMobile && renderAction("duplicateSelection")}
+            {!device.isMobile && renderAction("deleteSelectedElements")}
             {renderAction("group")}
             {renderAction("ungroup")}
             {showLinkIcon && renderAction("hyperlink")}
@@ -229,7 +234,9 @@ export const ShapesSwitcher = ({
             if (appState.activeTool.type !== value) {
               trackEvent("toolbar", value, "ui");
             }
-            const nextActiveTool = { ...activeTool, type: value };
+            const nextActiveTool = updateActiveTool(appState, {
+              type: value,
+            });
             setAppState({
               activeTool: nextActiveTool,
               multiElement: null,

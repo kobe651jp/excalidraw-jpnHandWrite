@@ -30,7 +30,7 @@ const trackAction = (
           trackEvent(
             action.trackEvent.category,
             action.trackEvent.action || action.name,
-            `${source} (${app.deviceType.isMobile ? "mobile" : "desktop"})`,
+            `${source} (${app.device.isMobile ? "mobile" : "desktop"})`,
           );
         }
       }
@@ -117,6 +117,7 @@ export class ActionManager {
     trackAction(action, "keyboard", appState, elements, this.app, null);
 
     event.preventDefault();
+    event.stopPropagation();
     this.updater(data[0].perform(elements, appState, value, this.app));
     return true;
   }

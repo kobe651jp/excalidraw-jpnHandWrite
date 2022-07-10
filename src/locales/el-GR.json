@@ -119,7 +119,14 @@
       "unlock": "",
       "lockAll": "",
       "unlockAll": ""
-    }
+    },
+    "statusPublished": "",
+    "sidebarLock": ""
+  },
+  "library": {
+    "noItems": "",
+    "hint_emptyLibrary": "",
+    "hint_emptyPrivateLibrary": ""
   },
   "buttons": {
     "clearReset": "Επαναφορά του καμβά",
@@ -172,7 +179,6 @@
     "uploadedSecurly": "Η μεταφόρτωση έχει εξασφαλιστεί με κρυπτογράφηση από άκρο σε άκρο, πράγμα που σημαίνει ότι ο διακομιστής Excalidraw και τρίτα μέρη δεν μπορούν να διαβάσουν το περιεχόμενο.",
     "loadSceneOverridePrompt": "Η φόρτωση εξωτερικού σχεδίου θα αντικαταστήσει το υπάρχον περιεχόμενο. Επιθυμείτε να συνεχίσετε;",
     "collabStopOverridePrompt": "Η διακοπή της συνεδρίας θα αντικαταστήσει το προηγούμενο, τοπικά αποθηκευμένο σχέδιο. Είστε σίγουροι?\n\n(Αν θέλετε να διατηρήσετε το τοπικό σας σχέδιο, απλά κλείστε την καρτέλα του προγράμματος περιήγησης.)",
-    "errorLoadingLibrary": "Υπήρξε ένα σφάλμα κατά τη φόρτωση της βιβλιοθήκης τρίτου μέρους.",
     "errorAddingToLibrary": "Αδυναμία προσθήκης αντικειμένου στη βιβλιοθήκη",
     "errorRemovingFromLibrary": "Αδυναμία αφαίρεσης αντικειμένου από τη βιβλιοθήκη",
     "confirmAddLibrary": "Αυτό θα προσθέσει {{numShapes}} σχήμα(τα) στη βιβλιοθήκη σας. Είστε σίγουροι;",
@@ -181,7 +187,8 @@
     "invalidSceneUrl": "",
     "resetLibrary": "Αυτό θα καθαρίσει τη βιβλιοθήκη σας. Είστε σίγουροι;",
     "removeItemsFromsLibrary": "",
-    "invalidEncryptionKey": "Το κλειδί κρυπτογράφησης πρέπει να είναι 22 χαρακτήρες. Η ζωντανή συνεργασία είναι απενεργοποιημένη."
+    "invalidEncryptionKey": "Το κλειδί κρυπτογράφησης πρέπει να είναι 22 χαρακτήρες. Η ζωντανή συνεργασία είναι απενεργοποιημένη.",
+    "browserZoom": ""
   },
   "errors": {
     "unsupportedFileType": "Μη υποστηριζόμενος τύπος αρχείου.",
@@ -189,7 +196,8 @@
     "fileTooBig": "Το αρχείο είναι πολύ μεγάλο. Το μέγιστο επιτρεπόμενο μέγεθος είναι {{maxSize}}.",
     "svgImageInsertError": "",
     "invalidSVGString": "Μη έγκυρο SVG.",
-    "cannotResolveCollabServer": ""
+    "cannotResolveCollabServer": "",
+    "importLibraryError": ""
   },
   "toolBar": {
     "selection": "Επιλογή",
@@ -341,7 +349,8 @@
       "post": ""
     },
     "noteItems": "",
-    "atleastOneLibItem": ""
+    "atleastOneLibItem": "",
+    "republishWarning": ""
   },
   "publishSuccessDialog": {
     "title": "",

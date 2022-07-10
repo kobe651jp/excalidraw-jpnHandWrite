@@ -20,3 +20,7 @@
 - ヘルプボタンをクリックすると、エラー(Can't find translation for helpDialog.toggleElementLock)
 - locales/jp-JP.json(helpDialog->toggleElementLock)の定義を追加。
 
+#### 追記(2022-0710)
+- @excalidraw/excalidraw version 0.12.0 対応
+- 上記2022-0422で追加したlocales/jp-JP.json(helpDialog->toggleElementLock)の定義を本家で対応したので、独自追加した分を削除しました。
+

@@ -23,6 +23,10 @@ const getHints = ({ appState, elements, isMobile }: HintViewerProps) => {
   const { activeTool, isResizing, isRotating, lastPointerDownWith } = appState;
   const multiMode = appState.multiElement !== null;
 
+  if (appState.isLibraryOpen) {
+    return null;
+  }
+
   if (isEraserActive(appState)) {
     return t("hints.eraserRevert");
   }
@@ -41,7 +45,7 @@ const getHints = ({ appState, elements, isMobile }: HintViewerProps) => {
     return t("hints.text");
   }
 
-  if (appState.activeTool.type === "image" && appState.pendingImageElement) {
+  if (appState.activeTool.type === "image" && appState.pendingImageElementId) {
     return t("hints.placeImage");
   }
 

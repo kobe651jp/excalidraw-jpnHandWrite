@@ -1,5 +1,4 @@
 const path = require("path");
-const CompressionPlugin = require("compression-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
 const BundleAnalyzerPlugin =
   require("webpack-bundle-analyzer").BundleAnalyzerPlugin;
@@ -47,7 +46,7 @@ module.exports = {
       },
       {
         test: /\.(ts|tsx|js|jsx|mjs)$/,
-        exclude: /node_modules/,
+        exclude: /node_modules\/(?!browser-fs-access)/,
         use: [
           {
             loader: "ts-loader",
@@ -101,12 +100,6 @@ module.exports = {
       "process.env": parseEnvVariables(
         path.resolve(__dirname, "../../../.env.production"),
       ),
-    }),
-    new CompressionPlugin({
-      algorithm: "gzip",
-      test: /\.js$|\.css$|\.html$|\.eot$|\.woff2$|\.ttf$|\.woff$/,
-      threshold: 10240,
-      minRatio: 0.8,
     }),
   ],
   externals: {
